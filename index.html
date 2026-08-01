@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NITE-SHOP</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0b0e1a; --card:#242a47; --card2:#2c3157; --border:#333a5e;
+    --text:#ffffff; --text-dim:#9299b8;
+    --yellow:#f4c430; --green:#2ecc71; --orange:#f5a623; --red:#ef4444;
+    --radius:20px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{ background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; height:100%; -webkit-font-smoothing:antialiased; }
+  #app{ max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; }
+
+  main{ flex:1; padding:20px 16px 100px; overflow-y:auto; }
+  .view{ display:none; animation:fadeIn .18s ease; }
+  .view.active{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  .user-row{ background:var(--card); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .user-left{ display:flex; align-items:center; gap:12px; }
+  .avatar{ width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#3a4270,#232748); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; overflow:hidden; }
+  .avatar img, .profile-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .user-name{ font-weight:700; font-size:15px; letter-spacing:0.5px; }
+  .balance-chip{ background:#1c2038; border:1px solid var(--border); border-radius:20px; padding:8px 14px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; }
+
+  .balance-card{ background:var(--card2); border-radius:var(--radius); padding:18px; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .balance-left{ display:flex; align-items:center; gap:12px; }
+  .balance-amount{ font-size:19px; font-weight:800; }
+  .btn-yellow{ background:var(--yellow); color:#1a1a1a; border:none; border-radius:14px; padding:11px 18px; font-weight:800; font-size:14px; display:flex; align-items:center; gap:6px; cursor:pointer; justify-content:center; }
+  .btn-green{ background:var(--green); color:#06240f; border:none; border-radius:16px; padding:15px; font-weight:800; font-size:15px; cursor:pointer; width:100%; }
+  .btn-green:disabled{ opacity:.4; }
+
+  .banner{ border-radius:var(--radius); background:linear-gradient(135deg,#0e3a52 0%, #123a63 45%, #f4c430 130%); padding:22px 18px; margin-bottom:26px; min-height:110px; display:flex; flex-direction:column; justify-content:center; }
+  .banner-title{ font-size:21px; font-weight:900; letter-spacing:1px; text-shadow:0 2px 10px rgba(0,0,0,.5); }
+  .banner-sub{ font-size:12px; color:#dfe4f7; margin-top:4px; letter-spacing:1.5px; }
+
+  .section-title{ text-align:center; font-size:15px; font-weight:800; letter-spacing:1.5px; color:var(--text-dim); margin-bottom:16px; }
+
+  .game-card{ background:var(--card); border-radius:16px; overflow:hidden; cursor:pointer; display:flex; align-items:center; gap:14px; padding:14px; margin-bottom:12px; }
+  .game-badge{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:18px; color:#1a1a1a; flex-shrink:0; overflow:hidden; }
+  .game-badge img{ width:100%; height:100%; object-fit:cover; }
+  .game-info .g-name{ font-weight:800; font-size:14px; }
+  .game-info .g-sub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+
+  .empty-state{ text-align:center; padding:70px 20px 20px; }
+  .empty-icon{ width:88px; height:88px; background:var(--card); border-radius:22px; display:flex; align-items:center; justify-content:center; font-size:36px; margin:0 auto 22px; }
+  .empty-title{ font-size:20px; font-weight:800; margin-bottom:10px; }
+  .empty-sub{ font-size:14px; color:var(--text-dim); line-height:1.5; }
+
+  .h-title{ text-align:center; font-size:20px; font-weight:800; margin:6px 0 18px; }
+  .search-box{ background:#151a30; border:1px solid var(--border); border-radius:14px; padding:13px 16px; display:flex; align-items:center; gap:10px; color:var(--text-dim); font-size:14px; margin-bottom:16px; }
+  .filter-row{ display:flex; gap:8px; overflow-x:auto; margin-bottom:6px; padding-bottom:4px; }
+  .filter-pill{ padding:9px 16px; border-radius:20px; font-size:13px; font-weight:700; white-space:nowrap; background:#151a30; color:var(--text-dim); border:1px solid var(--border); }
+  .filter-pill.active{ background:var(--green); color:#06240f; border-color:var(--green); }
+
+  .profile-head{ text-align:center; margin:10px 0 22px; }
+  .profile-avatar{ width:110px; height:110px; border-radius:50%; margin:0 auto 16px; background:linear-gradient(135deg,#3a4270,#1a1e38); border:3px solid var(--green); display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:800; position:relative; }
+  .profile-avatar .dot{ position:absolute; bottom:6px; right:6px; width:16px; height:16px; border-radius:50%; background:var(--green); border:3px solid var(--bg); }
+  .profile-name{ font-size:24px; font-weight:800; }
+  .profile-id{ display:inline-block; margin-top:10px; background:var(--card); border-radius:20px; padding:6px 16px; font-size:13px; color:var(--text-dim); }
+  .stat-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  .stat-card{ background:var(--card); border-radius:18px; padding:18px 12px; text-align:center; }
+  .stat-icon{ font-size:22px; margin-bottom:10px; color:var(--green); }
+  .stat-label{ font-size:11px; color:var(--text-dim); font-weight:700; letter-spacing:0.5px; line-height:1.4; }
+  .stat-value{ font-size:20px; font-weight:800; margin-top:6px; }
+  .menu-list{ background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:16px; }
+  .menu-item{ display:flex; align-items:center; gap:14px; padding:16px; border-bottom:1px solid var(--border); font-size:15px; font-weight:600; cursor:pointer; }
+  .menu-item:last-child{ border-bottom:none; }
+  .menu-item .ico{ color:var(--green); font-size:18px; width:20px; text-align:center; }
+  .menu-item .chev{ margin-left:auto; color:var(--text-dim); }
+  .version-row{ display:flex; justify-content:space-between; background:var(--card); border-radius:16px; padding:16px; color:var(--text-dim); font-size:14px; }
+
+  .sub-header{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .back-btn{ width:36px; height:36px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; flex-shrink:0; }
+  .sub-title{ font-size:19px; font-weight:800; }
+  .sub-sub{ font-size:13px; color:var(--text-dim); margin-top:2px; }
+
+  .pkg-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .pkg-card{ background:var(--card); border:2px solid transparent; border-radius:16px; padding:16px 10px; text-align:center; cursor:pointer; }
+  .pkg-card.selected{ border-color:var(--yellow); background:var(--card2); }
+  .pkg-amount{ font-weight:800; font-size:16px; }
+  .pkg-price{ font-size:12px; color:var(--text-dim); margin-top:4px; }
+  .field-label{ font-size:13px; color:var(--text-dim); margin:18px 0 8px; font-weight:600; }
+  .field-input{ width:100%; background:#151a30; border:1px solid var(--border); border-radius:14px; padding:14px 16px; color:var(--text); font-size:15px; }
+  .field-input::placeholder{ color:#585f80; }
+
+  /* payment method list */
+  .pm-item{ background:var(--card); border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px; margin-bottom:14px; cursor:pointer; }
+  .pm-item.disabled{ opacity:.4; cursor:default; }
+  .pm-icon{ width:40px; height:40px; border-radius:10px; background:#151a30; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .pm-name{ font-weight:800; font-size:15px; }
+  .pm-tag{ margin-left:auto; background:#1c2038; border-radius:12px; padding:5px 12px; font-size:12px; color:var(--green); font-weight:700; }
+
+  /* timer ring */
+  .timer-wrap{ display:flex; justify-content:center; margin:20px 0 24px; }
+  .timer-ring{ width:200px; height:200px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:conic-gradient(var(--green) calc(var(--pct,100)*1%), #1c2038 0); transition:background .3s linear; }
+  .timer-inner{ width:172px; height:172px; border-radius:50%; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .timer-time{ font-size:38px; font-weight:900; font-variant-numeric:tabular-nums; }
+  .timer-label{ font-size:13px; color:var(--text-dim); margin-top:4px; }
+
+  .pay-card{ background:linear-gradient(135deg,#1fae6e,#0d7a4c); border-radius:var(--radius); padding:20px; margin-bottom:18px; position:relative; overflow:hidden; }
+  .pay-card-holder{ font-size:14px; font-weight:700; letter-spacing:0.5px; margin-bottom:26px; }
+  .pay-card-label{ font-size:12px; color:#d7f5e6; margin-bottom:6px; }
+  .pay-card-number{ font-size:22px; font-weight:800; letter-spacing:2px; margin-bottom:16px; }
+  .copy-btn{ background:rgba(255,255,255,.18); border:none; border-radius:12px; padding:10px 16px; color:#fff; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+
+  .warn-box{ background:#2a1e0f; border:1px solid #6b4a12; border-radius:16px; padding:16px; margin-bottom:18px; }
+  .warn-title{ color:var(--orange); font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .warn-amount{ color:var(--orange); font-weight:900; font-size:20px; }
+  .warn-text{ color:#e8c98a; font-size:13px; line-height:1.5; margin-top:6px; }
+
+  .steps-box{ background:var(--card); border-radius:16px; padding:18px 16px; margin-bottom:20px; }
+  .steps-title{ font-weight:800; font-size:15px; margin-bottom:14px; }
+  .step-row{ display:flex; gap:14px; margin-bottom:16px; }
+  .step-row:last-child{ margin-bottom:0; }
+  .step-num{ width:26px; height:26px; border-radius:8px; background:#1c2038; color:var(--green); font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step-title{ font-weight:700; font-size:14px; }
+  .step-sub{ font-size:12px; color:var(--text-dim); margin-top:3px; line-height:1.4; }
+
+  .cancel-link{ text-align:center; color:var(--text-dim); font-size:14px; font-weight:600; padding:14px; cursor:pointer; }
+
+  nav{ position:fixed; bottom:0; left:0; right:0; max-width:520px; margin:0 auto; background:#151a30; border-top:1px solid var(--border); border-top-left-radius:22px; border-top-right-radius:22px; display:flex; padding:10px 6px calc(10px + env(safe-area-inset-bottom)); }
+  .nav-item{ flex:1; text-align:center; color:var(--text-dim); font-size:11px; font-weight:700; cursor:pointer; padding:6px 2px; }
+  .nav-item .nav-ico{ font-size:20px; display:block; margin-bottom:4px; }
+  .nav-item.active{ color:var(--green); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <main>
+
+    <!-- ============ HOME ============ -->
+    <section class="view active" id="view-home">
+      <div id="demo-banner" style="display:none; background:#3a2a0f; border:1px solid #a5701c; color:#f5c15c; border-radius:12px; padding:10px 14px; font-size:12px; margin-bottom:14px; text-align:center;">
+        ⚠️ DEMO REJIM — backend ulanmagan. Ma'lumotlar vaqtinchalik, saqlanmaydi.
+      </div>
+      <div class="user-row">
+        <div class="user-left">
+          <div class="avatar" id="home-avatar">N</div>
+          <div class="user-name" id="home-username">NTE</div>
+        </div>
+      </div>
+
+      <div class="balance-card">
+        <div class="balance-left"><span>💳</span><span class="balance-amount"><span id="bal-home">0</span> UZS</span></div>
+        <button class="btn-yellow" onclick="showView('topup-method')">＋ To'ldirish</button>
+      </div>
+
+      <div class="banner">
+        <div class="banner-title">NITE-SHOP</div>
+        <div class="banner-sub">TEZKOR • ISHONCHLI • 24/7 DONATE</div>
+      </div>
+
+      <div class="section-title">O'YINLARGA DONATE</div>
+      <div id="games-list"></div>
+    </section>
+
+    <!-- ============ BALANS ============ -->
+    <section class="view" id="view-balans">
+      <div class="user-row">
+        <div class="user-left"><div class="avatar" id="bal-avatar">N</div><div class="user-name" id="bal-username">NTE</div></div>
+        <div class="balance-chip">💳 <span id="bal-chip">0</span> UZS</div>
+      </div>
+      <div class="balance-card">
+        <div class="balance-left"><span>💳</span><span class="balance-amount"><span id="bal-home2">0</span> UZS</span></div>
+        <button class="btn-yellow" onclick="showView('topup-method')">＋ To'ldirish</button>
+      </div>
+      <div class="h-title">To'lovlar tarixi</div>
+      <div id="topups-list">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Tranzaksiyalar mavjud emas</div>
+          <div class="empty-sub">Tranzaksiya tarixingiz shu yerda ko'rinadi.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TARIX ============ -->
+    <section class="view" id="view-tarix">
+      <div class="user-row">
+        <div class="user-left"><div class="avatar" id="tar-avatar">N</div><div class="user-name" id="tar-username">NTE</div></div>
+        <div class="balance-chip">💳 <span id="tar-chip">0</span> UZS</div>
+      </div>
+      <div class="h-title">Buyurtmalar tarixi</div>
+      <div class="search-box">🔍 <span>Buyurtma ID yoki o'yin bo'yicha qidirish...</span></div>
+      <div class="filter-row">
+        <div class="filter-pill active" data-filter="hammasi" onclick="setPurchaseFilter('hammasi')">Hammasi</div>
+        <div class="filter-pill" data-filter="yetkazish_kutilmoqda" onclick="setPurchaseFilter('yetkazish_kutilmoqda')">Kutilmoqda</div>
+        <div class="filter-pill" data-filter="bajarildi" onclick="setPurchaseFilter('bajarildi')">Bajarildi</div>
+      </div>
+
+      <div id="purchases-list">
+        <div class="empty-state" style="padding-top:50px;">
+          <div class="empty-icon">📦</div>
+          <div class="empty-title">Buyurtmalar hali yo'q</div>
+          <div class="empty-sub">Buyurtmalar tarixingiz birinchi xaridingizdan keyin shu yerda ko'rinadi.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROFIL ============ -->
+    <section class="view" id="view-profil">
+      <div class="user-row">
+        <div class="user-left"><div class="avatar" id="prof-avatar-small">N</div><div class="user-name" id="prof-username-small">NTE</div></div>
+        <div class="balance-chip">💳 <span id="prof-chip">0</span> UZS</div>
+      </div>
+      <div class="profile-head">
+        <div class="profile-avatar" id="prof-avatar-big">N<div class="dot"></div></div>
+        <div class="profile-name" id="prof-username-big">@nite_user</div>
+        <div class="profile-id" id="prof-id">ID: 000000000</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-icon">🛍️</div><div class="stat-label">BAJARILGAN<br>BUYURTMALAR</div><div class="stat-value">0</div></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-label">RO'YXATDAN<br>O'TGAN</div><div class="stat-value" id="prof-date">—</div></div>
+      </div>
+      <div class="menu-list">
+        <div class="menu-item" onclick="openLink(LINKS.channel)"><span class="ico">📢</span> Yangiliklar kanali <span class="chev">›</span></div>
+        <div class="menu-item" onclick="openLink(LINKS.support)"><span class="ico">❓</span> Qo'llab-Quvvatlash <span class="chev">›</span></div>
+        <div class="menu-item" onclick="openLink(LINKS.offer)"><span class="ico">📜</span> Ommaviy oferta <span class="chev">›</span></div>
+      </div>
+      <div class="version-row"><span>Ilova versiyasi</span><span>v2.0.0</span></div>
+    </section>
+
+    <!-- ============ DONATE ============ -->
+    <section class="view" id="view-donate">
+      <div class="sub-header">
+        <div class="back-btn" onclick="showView('home')">‹</div>
+        <div><div class="sub-title" id="donate-title">O'yin</div></div>
+      </div>
+      <div class="pkg-grid" id="pkg-grid"></div>
+      <div class="field-label">O'yin ID / akkount ID</div>
+      <input class="field-input" id="donate-game-id" placeholder="Masalan: 5123456789" oninput="checkContinue()">
+      <div style="margin-top:24px;">
+        <button class="btn-green" id="continue-btn" disabled onclick="continuePurchase()">Sotib olish (balansdan)</button>
+      </div>
+    </section>
+
+    <!-- ============ TOPUP: usul tanlash ============ -->
+    <section class="view" id="view-topup-method">
+      <div class="sub-header">
+        <div class="back-btn" onclick="showView('balans')">‹</div>
+        <div><div class="sub-title">Hisobni to'ldirish</div><div class="sub-sub">To'lov usulini tanlang</div></div>
+      </div>
+      <div class="pm-item" onclick="showView('topup-amount')">
+        <div class="pm-icon">💳</div>
+        <div><div class="pm-name">UZCARD / HUMO</div></div>
+        <div class="pm-tag">so'm</div>
+      </div>
+      <div class="pm-item disabled">
+        <div class="pm-icon">🔁</div>
+        <div><div class="pm-name">SBP</div></div>
+        <div class="pm-tag" style="color:var(--text-dim);">tez orada</div>
+      </div>
+      <div class="pm-item disabled">
+        <div class="pm-icon">🏧</div>
+        <div><div class="pm-name">BANKOMAT</div></div>
+        <div class="pm-tag" style="color:var(--text-dim);">tez orada</div>
+      </div>
+    </section>
+
+    <!-- ============ TOPUP: summa kiritish ============ -->
+    <section class="view" id="view-topup-amount">
+      <div class="sub-header">
+        <div class="back-btn" onclick="showView('topup-method')">‹</div>
+        <div><div class="sub-title">UZCARD / HUMO</div></div>
+      </div>
+      <div style="background:var(--card); border-radius:var(--radius); padding:20px;">
+        <div style="color:var(--text-dim); font-size:14px; line-height:1.6; margin-bottom:18px;">
+          Summani kiriting va ko'rsatilgan kartaga o'tkazing. To'lov admin tomonidan tekshiriladi, shundan so'ng balansingiz yangilanadi.
+        </div>
+        <div class="field-label" style="margin-top:0;">Summa (UZS)</div>
+        <input class="field-input" id="topup-amount-input" type="number" placeholder="Summani kiriting" oninput="checkTopupAmount()">
+        <div style="margin-top:20px;">
+          <button class="btn-green" id="topup-continue-btn" disabled onclick="createTopup()">Davom etish</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TOPUP: to'lov + taymer ============ -->
+    <section class="view" id="view-topup-pay">
+      <div class="timer-wrap">
+        <div class="timer-ring" id="timer-ring">
+          <div class="timer-inner">
+            <div class="timer-time" id="timer-time">05:00</div>
+            <div class="timer-label">Qoldi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pay-card">
+        <div class="pay-card-holder" id="pay-card-holder">F.I.SH.</div>
+        <div class="pay-card-label">Karta raqam</div>
+        <div class="pay-card-number" id="pay-card-number">0000 0000 0000 0000</div>
+        <button class="copy-btn" onclick="copyCard()">📋 Copy</button>
+      </div>
+
+      <div class="warn-box">
+        <div class="warn-title">⚠️ MUHIM!</div>
+        <div>Quyida ko'rsatilgan summani to'lashingiz shart: <span class="warn-amount" id="warn-amount">0 UZS</span></div>
+        <div class="warn-text">Hatto 1 so'm kam yoki ko'p bo'lsa ham to'lov admin tomonidan tasdiqlanmaydi.</div>
+      </div>
+
+      <div class="steps-box">
+        <div class="steps-title">Qanday to'lash kerak</div>
+        <div class="step-row"><div class="step-num">1</div><div><div class="step-title">Karta raqamini nusxalang</div><div class="step-sub">Yuqoridagi kartadagi Copy tugmasini bosing</div></div></div>
+        <div class="step-row"><div class="step-num">2</div><div><div class="step-title">Bank ilovasini oching</div><div class="step-sub">Istalgan bank yoki to'lov ilovasini tanlang</div></div></div>
+        <div class="step-row"><div class="step-num">3</div><div><div class="step-title">Ko'rsatilgan summani o'tkazing</div><div class="step-sub">Aynan shu summani, kam yoki ko'p emas</div></div></div>
+        <div class="step-row"><div class="step-num">4</div><div><div class="step-title">"To'lov qildim" tugmasini bosing</div><div class="step-sub">Admin bank hisobingizni tekshirib tasdiqlaydi</div></div></div>
+      </div>
+
+      <button class="btn-green" id="paid-btn" onclick="confirmTopup()">✅ To'lov qildim</button>
+      <div class="cancel-link" onclick="showView('balans')">Bekor qilish</div>
+    </section>
+
+  </main>
+
+  <nav>
+    <div class="nav-item active" data-view="home" onclick="showView('home')"><span class="nav-ico">🏠</span>Bosh sahifa</div>
+    <div class="nav-item" data-view="balans" onclick="showView('balans')"><span class="nav-ico">👛</span>Balans</div>
+    <div class="nav-item" data-view="tarix" onclick="showView('tarix')"><span class="nav-ico">🕘</span>Tarix</div>
+    <div class="nav-item" data-view="profil" onclick="showView('profil')"><span class="nav-ico">👤</span>Profil</div>
+  </nav>
+
+</div>
+
+<script>
+// ====== CONFIG — bu joylarni o'zingiznikiga almashtiring ======
+const LINKS = {
+  bot: "https://t.me/NiteShopUzBot",
+  channel: "https://t.me/NiteboiUz",
+  support: "https://t.me/NiteboiAdmin",
+  offer: "https://t.me/NiteboiAdmin"
+};
+const API_BASE = "https://web-production-d31035.up.railway.app";
+const DEMO_MODE = API_BASE.includes("your-backend-domain") || API_BASE.includes("REPLACE_ME");
+
+const DEMO_GAMES = [{
+  id: "demo-pubg", name: "PUBG MOBILE", badge_text: "PB", icon_url: null,
+  packages: [
+    { id: "demo-1", label: "60 UC", price: 12000 },
+    { id: "demo-2", label: "325 UC", price: 58000 },
+    { id: "demo-3", label: "660 UC", price: 112000 },
+    { id: "demo-4", label: "1800 UC", price: 285000 },
+    { id: "demo-5", label: "3850 UC", price: 560000 },
+    { id: "demo-6", label: "8100 UC", price: 1120000 }
+  ]
+}];
+
+let currentBalance = 0;
+let selectedGame = null;
+let selectedPkg = null;
+let GAMES_DATA = [];
+let currentTopup = null;
+let timerInterval = null;
+
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
+
+// ---------- navigation ----------
+const MAIN_TABS = ["home","balans","tarix","profil"];
+function showView(name){
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + name).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  const navItem = document.querySelector('.nav-item[data-view="' + name + '"]');
+  if (navItem) navItem.classList.add("active");
+  if (name !== "topup-pay" && timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function openLink(url){ if (tg) tg.openTelegramLink(url); else window.open(url, "_blank"); }
+
+// ---------- user + balance ----------
+function setAllAvatars(photoUrl, initial){
+  ["home-avatar","bal-avatar","tar-avatar","prof-avatar-small"].forEach(id => {
+    document.getElementById(id).innerHTML = photoUrl ? `<img src="${photoUrl}">` : initial;
+  });
+  document.getElementById("prof-avatar-big").innerHTML = (photoUrl ? `<img src="${photoUrl}">` : initial) + '<div class="dot"></div>';
+}
+function setAllBalances(balance){
+  currentBalance = balance;
+  const fmt = balance.toLocaleString("fr-FR").replace(/,/g, " ");
+  ["bal-home","bal-home2"].forEach(id => document.getElementById(id).textContent = fmt);
+  ["bal-chip","tar-chip","prof-chip"].forEach(id => document.getElementById(id).textContent = fmt);
+}
+
+async function loadUser(){
+  if (DEMO_MODE) document.getElementById("demo-banner").style.display = "block";
+  setAllAvatars(null, "N");
+  setAllBalances(DEMO_MODE ? currentBalance : 0);
+  if (DEMO_MODE) {
+    document.querySelectorAll("#home-username,#bal-username,#tar-username,#prof-username-small").forEach(el => el.textContent = "Demo User");
+    document.getElementById("prof-username-big").textContent = "@demo_user";
+    document.getElementById("prof-id").textContent = "ID: demo-mode";
+    const today = new Date();
+    document.getElementById("prof-date").textContent = String(today.getDate()).padStart(2,"0") + "." + String(today.getMonth()+1).padStart(2,"0") + "." + today.getFullYear();
+    return;
+  }
+  if (!tg || !tg.initData) { document.getElementById("prof-id").textContent = "ID: demo"; return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/me?init_data=${encodeURIComponent(tg.initData)}`);
+    if (!res.ok) throw new Error("auth failed");
+    const data = await res.json();
+    const displayName = data.username ? "@" + data.username : (data.first_name || "Foydalanuvchi");
+    const initial = (data.first_name || data.username || "N")[0].toUpperCase();
+    document.querySelectorAll("#home-username,#bal-username,#tar-username,#prof-username-small").forEach(el => el.textContent = displayName);
+    document.getElementById("prof-username-big").textContent = displayName;
+    document.getElementById("prof-id").textContent = "ID: " + data.user_id;
+    setAllAvatars(data.photo_url, initial);
+    setAllBalances(data.balance);
+    const today = new Date();
+    document.getElementById("prof-date").textContent = String(today.getDate()).padStart(2,"0") + "." + String(today.getMonth()+1).padStart(2,"0") + "." + today.getFullYear();
+  } catch (e) { console.error("Foydalanuvchini yuklab bo'lmadi", e); }
+}
+
+// ---------- games ----------
+async function loadGames(){
+  if (DEMO_MODE) { GAMES_DATA = DEMO_GAMES; renderGamesList(); return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/games`);
+    if (!res.ok) throw new Error("status " + res.status);
+    GAMES_DATA = await res.json();
+    if (!GAMES_DATA.length) {
+      document.getElementById("games-list").innerHTML =
+        `<div style="text-align:center; color:var(--text-dim); padding:20px 0;">Hozircha o'yinlar mavjud emas. Admin panel orqali qo'shing (/admin).</div>`;
+      return;
+    }
+  } catch (e) {
+    console.error("O'yinlarni yuklab bo'lmadi", e);
+    document.getElementById("games-list").innerHTML =
+      `<div style="text-align:center; color:var(--red); padding:20px 0; font-size:13px;">
+        ⚠️ Backend'ga ulanib bo'lmadi.<br>API_BASE manzilini tekshiring.
+      </div>`;
+    return;
+  }
+  renderGamesList();
+}
+
+function renderGamesList(){
+  const wrap = document.getElementById("games-list");
+  if (!GAMES_DATA.length) {
+    wrap.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:20px 0;">Hozircha o'yinlar mavjud emas</div>`;
+    return;
+  }
+  wrap.innerHTML = GAMES_DATA.map(g => `
+    <div class="game-card" onclick="openDonate('${g.id}')">
+      <div class="game-badge" style="background:linear-gradient(145deg,#f4c430,#c98f0a);">
+        ${g.icon_url ? `<img src="${g.icon_url}">` : (g.badge_text || g.name[0])}
+      </div>
+      <div class="game-info">
+        <div class="g-name">${g.name}</div>
+        <div class="g-sub">${g.packages.length} ta paket mavjud</div>
+      </div>
+      <div style="margin-left:auto; color:var(--text-dim); font-size:18px;">›</div>
+    </div>
+  `).join("");
+}
+
+function openDonate(gameId){
+  const game = GAMES_DATA.find(g => String(g.id) === String(gameId));
+  if (!game) return;
+  selectedGame = game;
+  selectedPkg = null;
+  document.getElementById("donate-title").textContent = game.name;
+  document.getElementById("donate-game-id").value = "";
+
+  const grid = document.getElementById("pkg-grid");
+  grid.innerHTML = "";
+  game.packages.forEach(pkg => {
+    const card = document.createElement("div");
+    card.className = "pkg-card";
+    const priceLabel = pkg.price.toLocaleString("fr-FR").replace(/,/g," ") + " so'm";
+    card.innerHTML = `<div class="pkg-amount">${pkg.label}</div><div class="pkg-price">${priceLabel}</div>`;
+    card.onclick = () => {
+      document.querySelectorAll(".pkg-card").forEach(c => c.classList.remove("selected"));
+      card.classList.add("selected");
+      selectedPkg = pkg;
+      checkContinue();
+    };
+    grid.appendChild(card);
+  });
+  document.getElementById("continue-btn").disabled = true;
+  showView("donate");
+}
+
+function checkContinue(){
+  const idVal = document.getElementById("donate-game-id").value.trim();
+  document.getElementById("continue-btn").disabled = !(selectedPkg && idVal.length > 2);
+}
+
+async function continuePurchase(){
+  const idVal = document.getElementById("donate-game-id").value.trim();
+  if (!selectedPkg || !idVal) return;
+
+  if (selectedPkg.price > currentBalance) {
+    const short = selectedPkg.price - currentBalance;
+    const msg = `Balansingiz yetarli emas. Kamida ${short.toLocaleString("fr-FR").replace(/,/g," ")} so'm yetishmayapti.`;
+    if (tg) tg.showConfirm(msg + "\\n\\nBalansni to'ldirishga o'taymi?", (ok) => { if (ok) showView("topup-method"); });
+    else alert(msg);
+    return;
+  }
+
+  if (DEMO_MODE) {
+    setAllBalances(currentBalance - selectedPkg.price);
+    alert(`✅ (DEMO) Xarid muvaffaqiyatli! ${selectedPkg.label} — bu faqat interfeys namoyishi, haqiqiy backend ulanmagan.`);
+    showView("home");
+    return;
+  }
+
+  if (!tg || !tg.initData) { alert("Bu amal faqat Telegram ichida ishlaydi."); return; }
+
+  const btn = document.getElementById("continue-btn");
+  btn.disabled = true; btn.textContent = "Yuborilmoqda...";
+  try {
+    const res = await fetch(`${API_BASE}/api/purchase`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ init_data: tg.initData, package_id: selectedPkg.id, game_account_id: idVal })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+    setAllBalances(data.new_balance);
+    if (tg) tg.showAlert(`✅ Xarid muvaffaqiyatli! ${selectedPkg.label} tez orada hisobingizga o'tkaziladi.`);
+    else alert("Xarid muvaffaqiyatli!");
+    showView("home");
+    loadPurchasesHistory();
+  } catch (e) {
+    if (tg) tg.showAlert("❌ Xatolik: " + e.message); else alert("Xatolik: " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Sotib olish (balansdan)";
+  }
+}
+
+// ---------- top-up flow ----------
+function checkTopupAmount(){
+  const val = parseInt(document.getElementById("topup-amount-input").value || "0", 10);
+  document.getElementById("topup-continue-btn").disabled = !(val >= 5000);
+}
+
+async function createTopup(){
+  const amount = parseInt(document.getElementById("topup-amount-input").value || "0", 10);
+  if (amount < 5000) return;
+
+  if (DEMO_MODE) {
+    const rounded = Math.floor(amount / 1000) * 1000;
+    const uniqueAmount = rounded + (100 + Math.floor(Math.random() * 899));
+    currentTopup = { topup_id: "demo", unique_amount: uniqueAmount, card_number: "8600 1234 5678 9012", card_holder: "DEMO KARTA EGASI", ttl_seconds: 300 };
+    document.getElementById("pay-card-holder").textContent = currentTopup.card_holder;
+    document.getElementById("pay-card-number").textContent = currentTopup.card_number;
+    document.getElementById("warn-amount").textContent = uniqueAmount.toLocaleString("fr-FR").replace(/,/g," ") + " UZS";
+    document.getElementById("paid-btn").disabled = false;
+    document.getElementById("paid-btn").textContent = "✅ To'lov qildim";
+    startTimer(300);
+    showView("topup-pay");
+    return;
+  }
+
+  if (!tg || !tg.initData) { alert("Bu amal faqat Telegram ichida ishlaydi."); return; }
+
+  const btn = document.getElementById("topup-continue-btn");
+  btn.disabled = true; btn.textContent = "Yuklanmoqda...";
+  try {
+    const res = await fetch(`${API_BASE}/api/topup/create`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ init_data: tg.initData, amount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Xatolik");
+    currentTopup = data;
+    document.getElementById("pay-card-holder").textContent = data.card_holder;
+    document.getElementById("pay-card-number").textContent = data.card_number;
+    document.getElementById("warn-amount").textContent = data.unique_amount.toLocaleString("fr-FR").replace(/,/g," ") + " UZS";
+    document.getElementById("paid-btn").disabled = false;
+    document.getElementById("paid-btn").textContent = "✅ To'lov qildim";
+    startTimer(data.ttl_seconds);
+    showView("topup-pay");
+  } catch (e) {
+    alert("Xatolik: " + e.message + "\n\nBackend ishlab turganini va API_BASE to'g'ri sozlanganini tekshiring.");
+  } finally {
+    btn.disabled = false; btn.textContent = "Davom etish";
+  }
+}
+
+function startTimer(totalSeconds){
+  let remaining = totalSeconds;
+  const ring = document.getElementById("timer-ring");
+  const timeEl = document.getElementById("timer-time");
+  function tick(){
+    const m = Math.floor(remaining / 60), s = remaining % 60;
+    timeEl.textContent = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+    const pct = Math.max(0, (remaining / totalSeconds) * 100);
+    ring.style.setProperty("--pct", pct);
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById("paid-btn").disabled = true;
+      document.getElementById("paid-btn").textContent = "⏱ Muddat tugadi";
+      if (tg) tg.showAlert("To'lov muddati tugadi. Iltimos, qaytadan urinib ko'ring.");
+      return;
+    }
+    remaining--;
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+function copyCard(){
+  const num = document.getElementById("pay-card-number").textContent;
+  const clean = num.replace(/\\s/g,"");
+  if (navigator.clipboard) navigator.clipboard.writeText(clean);
+  if (tg) tg.showAlert("Karta raqami nusxalandi ✅"); else alert("Nusxalandi: " + clean);
+}
+
+async function confirmTopup(){
+  if (!currentTopup) return;
+
+  if (DEMO_MODE) {
+    clearInterval(timerInterval);
+    alert("Demo rejim: haqiqiy backend ulanmagani uchun to'lov admin tomonidan tasdiqlanmaydi. Bu faqat interfeys namoyishi.");
+    showView("balans");
+    return;
+  }
+
+  if (!tg || !tg.initData) return;
+  const btn = document.getElementById("paid-btn");
+  btn.disabled = true; btn.textContent = "Yuborilmoqda...";
+  try {
+    const res = await fetch(`${API_BASE}/api/topup/confirm`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ init_data: tg.initData, topup_id: currentTopup.topup_id })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Xatolik");
+    clearInterval(timerInterval);
+    if (tg) tg.showAlert("📤 So'rovingiz qabul qilindi. Admin bank hisobini tekshirgach balansingiz avtomatik yangilanadi.");
+    else alert("So'rov qabul qilindi, tekshirilmoqda.");
+    showView("balans");
+    loadUser();
+    loadTopupsHistory();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "✅ To'lov qildim";
+    if (tg) tg.showAlert("❌ Xatolik: " + e.message); else alert("Xatolik: " + e.message);
+  }
+}
+
+// ---------- to'lovlar / buyurtmalar tarixi ----------
+const TOPUP_STATUS_LABELS = {
+  kutilmoqda: ["⏳ To'lov kutilmoqda", "var(--text-dim)"],
+  tekshirilmoqda: ["🔍 Tekshirilmoqda", "var(--yellow)"],
+  tasdiqlandi: ["✅ Tasdiqlandi", "var(--green)"],
+  rad_etildi: ["❌ Rad etildi", "var(--red)"],
+  muddati_otgan: ["⏱ Muddati tugagan", "var(--text-dim)"],
+};
+const PURCHASE_STATUS_LABELS = {
+  yetkazish_kutilmoqda: ["⏳ Yetkazish kutilmoqda", "var(--yellow)"],
+  bajarildi: ["📦 Bajarildi", "var(--green)"],
+};
+
+function fmtSom(n){ return n.toLocaleString("fr-FR").replace(/,/g," ") + " so'm"; }
+function fmtDate(iso){
+  try {
+    const d = new Date(iso);
+    return String(d.getDate()).padStart(2,"0") + "." + String(d.getMonth()+1).padStart(2,"0") + "." + d.getFullYear() +
+           " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  } catch(e) { return iso; }
+}
+
+async function loadTopupsHistory(){
+  const wrap = document.getElementById("topups-list");
+  if (DEMO_MODE || !tg || !tg.initData) return; // demo/statik holatda o'zgartirmaymiz
+  try {
+    const res = await fetch(`${API_BASE}/api/my/topups?init_data=${encodeURIComponent(tg.initData)}`);
+    if (!res.ok) throw new Error();
+    const items = await res.json();
+    if (!items.length) return; // statik "bo'sh holat" allaqachon ko'rsatilgan
+    wrap.innerHTML = items.map(t => {
+      const [label, color] = TOPUP_STATUS_LABELS[t.status] || [t.status, "var(--text-dim)"];
+      return `
+        <div class="game-card" style="cursor:default;">
+          <div class="game-badge" style="background:#1c2038; color:var(--green); font-size:20px;">💳</div>
+          <div class="game-info">
+            <div class="g-name">${fmtSom(t.unique_amount)}</div>
+            <div class="g-sub">${fmtDate(t.created_at)}</div>
+          </div>
+          <div style="margin-left:auto; text-align:right; font-size:12px; font-weight:700; color:${color};">${label}</div>
+        </div>`;
+    }).join("");
+  } catch (e) { console.error("To'lovlar tarixini yuklab bo'lmadi", e); }
+}
+
+let allPurchases = [];
+let purchaseFilter = "hammasi";
+
+async function loadPurchasesHistory(){
+  if (DEMO_MODE || !tg || !tg.initData) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/my/purchases?init_data=${encodeURIComponent(tg.initData)}`);
+    if (!res.ok) throw new Error();
+    allPurchases = await res.json();
+    renderPurchasesList();
+  } catch (e) { console.error("Buyurtmalar tarixini yuklab bo'lmadi", e); }
+}
+
+function setPurchaseFilter(filter){
+  purchaseFilter = filter;
+  document.querySelectorAll(".filter-pill").forEach(p => p.classList.toggle("active", p.dataset.filter === filter));
+  renderPurchasesList();
+}
+
+function renderPurchasesList(){
+  const wrap = document.getElementById("purchases-list");
+  if (!allPurchases.length) return; // statik "bo'sh holat" qoladi
+  const items = purchaseFilter === "hammasi" ? allPurchases : allPurchases.filter(p => p.status === purchaseFilter);
+  if (!items.length) {
+    wrap.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:40px 0; font-size:14px;">Bu bo'limda buyurtmalar yo'q</div>`;
+    return;
+  }
+  wrap.innerHTML = items.map(p => {
+    const [label, color] = PURCHASE_STATUS_LABELS[p.status] || [p.status, "var(--text-dim)"];
+    return `
+      <div class="game-card" style="cursor:default;">
+        <div class="game-badge" style="background:linear-gradient(145deg,#f4c430,#c98f0a);">${(p.game_name||"?")[0]}</div>
+        <div class="game-info">
+          <div class="g-name">#${p.id} — ${p.package_label}</div>
+          <div class="g-sub">${p.game_name} • ${p.game_account_id} • ${fmtDate(p.created_at)}</div>
+        </div>
+        <div style="margin-left:auto; text-align:right;">
+          <div style="font-size:13px; font-weight:800;">${fmtSom(p.price)}</div>
+          <div style="font-size:11px; font-weight:700; color:${color}; margin-top:2px;">${label}</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+loadUser();
+loadGames();
+loadTopupsHistory();
+loadPurchasesHistory();
+setInterval(loadUser, 15000); // balans admin tasdiqlagach avtomatik yangilanishi uchun
+setInterval(loadTopupsHistory, 15000);
+setInterval(loadPurchasesHistory, 15000);
+</script>
+</body>
+</html>
